@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeede9;
+  --text:#1a1a1a;--text2:#6b6b6b;--text3:#aaa;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --radius:8px;--radius-lg:12px;
+  --danger:#c0392b;--info:#1a73e8;
+  --orange:#c87a00;--orange-bg:#fff8ee;
+  --tag-bg:#fef3e2;--tag-text:#a05c00;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1e1e1e;--bg2:#2a2a2a;--bg3:#333;
+    --text:#f0f0f0;--text2:#aaa;--text3:#666;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --danger:#e55;--info:#6ab0f5;
+    --orange:#e8a030;--orange-bg:#2a1f00;
+    --tag-bg:#2a1f00;--tag-text:#e8a030;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:1rem}
+h1{font-size:22px;font-weight:500;margin-bottom:1rem}
+.tab-bar{display:flex;gap:4px;border-bottom:0.5px solid var(--border2);margin-bottom:1.5rem;flex-wrap:wrap}
+.tab{padding:8px 16px;font-size:14px;border:none;background:none;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--text);border-bottom:2px solid var(--text);font-weight:500}
+.view{display:none}.view.active{display:block}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:12px}
+input,select,textarea{width:100%;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:14px;background:var(--bg);color:var(--text);font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--text)}
+button{padding:8px 16px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;font-size:13px;font-family:inherit}
+button:hover{background:var(--bg2)}
+button.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+button.primary:hover{opacity:0.85}
+button.danger{color:var(--danger);border-color:var(--danger)}
+button.sm{padding:4px 10px;font-size:12px}
+.btn-add-courses{font-size:12px;padding:4px 10px;border:0.5px solid var(--orange);color:var(--orange);border-radius:var(--radius);background:none;cursor:pointer;font-family:inherit}
+.btn-add-courses:hover{background:var(--orange-bg)}
+.btn-remove-courses{font-size:12px;padding:4px 10px;border:0.5px solid var(--orange);color:#fff;background:var(--orange);border-radius:var(--radius);cursor:pointer;font-family:inherit}
+.btn-remove-courses:hover{opacity:0.85}
+.label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
+.row{display:flex;gap:8px;align-items:flex-end;margin-bottom:8px}
+.row>*{flex:1}.row>button{flex:0 0 auto}
+.badge{display:inline-block;padding:2px 8px;border-radius:var(--radius);font-size:11px;background:var(--bg2);color:var(--text2)}
+.tag-badge{display:inline-block;padding:2px 7px;border-radius:var(--radius);font-size:11px;background:var(--tag-bg);color:var(--tag-text)}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:16px}
+.day-cell{background:var(--bg2);border-radius:var(--radius);padding:8px;min-height:90px;border:0.5px solid var(--border)}
+.day-cell h4{font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.meal-slot{margin-bottom:5px}
+.meal-slot-label{font-size:10px;color:var(--text3);margin-bottom:2px}
+.meal-tag{font-size:11px;background:var(--bg);border:0.5px solid var(--border);border-radius:4px;padding:3px 5px;display:flex;align-items:center;justify-content:space-between;gap:3px}
+.meal-tag span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-size:11px}
+.rm{color:var(--danger);font-size:13px;line-height:1;flex-shrink:0;cursor:pointer;border:none;background:none;padding:0 2px}
+.add-meal-btn{font-size:10px;color:var(--text3);border:0.5px dashed var(--border2);background:none;cursor:pointer;padding:2px 5px;border-radius:4px;width:100%}
+.add-meal-btn:hover{color:var(--text);background:var(--bg)}
+.grocery-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border);font-size:14px}
+.grocery-item:last-child{border-bottom:none}
+.grocery-item input[type=checkbox]{width:16px;height:16px;flex-shrink:0;cursor:pointer}
+.grocery-item.checked span{text-decoration:line-through;color:var(--text3)}
+.grocery-section-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;padding:10px 0 4px;margin-top:6px;border-bottom:0.5px solid var(--border2)}
+.empty{color:var(--text3);font-size:13px;text-align:center;padding:2rem 0}
+.ingredient-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.ingredient-row input{flex:1}
+.ingredient-row input.qty{flex:0 0 60px}
+.ingredient-row input.unit{flex:0 0 60px}
+.ingredient-row select{flex:0 0 110px;font-size:12px;padding:8px 6px}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.week-label{font-size:13px;font-weight:500;margin-bottom:8px;color:var(--text2)}
+.restock-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.restock-row:last-child{border-bottom:none}
+.restock-row .name{flex:1;font-size:14px}
+.picker-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;display:none;align-items:center;justify-content:center}
+.picker-overlay.open{display:flex}
+.picker-box{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;width:90%;max-width:340px;max-height:80vh;display:flex;flex-direction:column;gap:10px}
+.picker-box h3{font-size:15px;font-weight:500}
+.picker-list{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:4px}
+.picker-item{padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:13px;border:0.5px solid var(--border);background:var(--bg2)}
+.picker-item:hover{background:var(--bg);border-color:var(--border2)}
+.picker-empty{font-size:13px;color:var(--text3);text-align:center;padding:1rem 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Meal Planner</h1>
+  <div class="tab-bar">
+    <button class="tab active" onclick="showTab('recipes',event)">Recettes</button>
+    <button class="tab" onclick="showTab('planner',event)">Planning</button>
+    <button class="tab" onclick="showTab('grocery',event)">Courses</button>
+    <button class="tab" onclick="showTab('restock',event)">A recharger</button>
+    <button class="tab" onclick="showTab('tags',event)">Tags</button>
+  </div>
+
+  <!-- RECETTES -->
+  <div id="view-recipes" class="view active">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:13px;color:var(--text2)" id="recipe-count"></span>
+      <button class="primary" onclick="openAddRecipe()">+ Ajouter une recette</button>
+    </div>
+    <div id="recipe-list"></div>
+    <div id="recipe-form" style="display:none" class="card">
+      <div class="row"><div><span class="label">Nom de la recette</span><input id="f-name" placeholder="Ex : poulet roti"></div></div>
+      <div class="row"><div><span class="label">Lien recette (optionnel)</span><input id="f-url" placeholder="https://..."></div></div>
+      <span class="label">Ingredients</span>
+      <div id="ing-list"></div>
+      <button onclick="addIngredientRow()" style="margin-bottom:12px;font-size:12px">+ Ingredient</button>
+      <div class="flex-end">
+        <button onclick="cancelRecipe()">Annuler</button>
+        <button class="primary" onclick="saveRecipe()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANNING -->
+  <div id="view-planner" class="view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:13px;color:var(--text2)">Clique sur + pour assigner une recette</span>
+      <button class="danger" onclick="resetPlanner()">Reinitialiser</button>
+    </div>
+    <div class="week-label">Semaine 1</div>
+    <div class="week-grid" id="week1"></div>
+    <div class="week-label">Semaine 2</div>
+    <div class="week-grid" id="week2"></div>
+  </div>
+
+  <!-- COURSES -->
+  <div id="view-grocery" class="view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:13px;color:var(--text2)">Trie par rayon</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="refreshGrocery()">Actualiser</button>
+        <button class="danger" onclick="resetGrocery()">Reset courses</button>
+      </div>
+    </div>
+    <div id="grocery-list"></div>
+  </div>
+
+  <!-- A RECHARGER -->
+  <div id="view-restock" class="view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:13px;color:var(--text2)">Mes articles habituels</span>
+      <button class="primary" onclick="openAddRestock()">+ Ajouter un article</button>
+    </div>
+    <div id="restock-list"></div>
+    <div id="restock-form" style="display:none;margin-top:12px" class="card">
+      <span class="label">Nom de l'article</span>
+      <div class="row"><input id="restock-input" placeholder="Ex : papier toilette, huile d'olive..."></div>
+      <span class="label">Tag rayon (optionnel)</span>
+      <div class="row">
+        <select id="restock-tag-select"><option value="">-- Aucun tag --</option></select>
+        <button onclick="saveRestockItem()">Ajouter</button>
+        <button onclick="cancelRestock()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAGS -->
+  <div id="view-tags" class="view">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-size:13px;color:var(--text2)">Gere tes rayons / categories</span>
+      <button class="primary" onclick="openAddTag()">+ Nouveau tag</button>
+    </div>
+    <div id="tag-list"></div>
+    <div id="tag-form" style="display:none;margin-top:12px" class="card">
+      <span class="label">Nom du tag</span>
+      <div class="row">
+        <input id="tag-input" placeholder="Ex : Produits frais, Picard, Rayon vegetal...">
+        <button onclick="saveTag()">Ajouter</button>
+        <button onclick="cancelTag()">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="picker-overlay" id="picker-overlay">
+  <div class="picker-box">
+    <h3>Choisir une recette</h3>
+    <input id="picker-search" placeholder="Rechercher..." oninput="filterPicker(this.value)">
+    <div class="picker-list" id="picker-list"></div>
+    <button onclick="closePicker()">Annuler</button>
+  </div>
+</div>
+
+<script>
+const DAYS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const MEALS=['midi','soir'];
+const NO_TAG='Sans rayon';
+let state={recipes:[],planner:{},grocery:{},restock:[],restockAdded:{},tags:[]};
+let editingId=null;
+let ingRows=[];
+let pickerMkey=null;
+
+function load(){
+  try{const d=localStorage.getItem('meal-planner-v4');if(d)state=JSON.parse(d);}catch(e){}
+  if(!state.restockAdded)state.restockAdded={};
+  if(!state.tags)state.tags=[];
+  render();
+}
+function save(){
+  try{localStorage.setItem('meal-planner-v4',JSON.stringify(state));}catch(e){}
+}
+
+function showTab(t,ev){
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  ev.target.classList.add('active');
+  document.getElementById('view-'+t).classList.add('active');
+  if(t==='grocery')refreshGrocery();
+  if(t==='planner')renderPlanner();
+  if(t==='restock')renderRestock();
+  if(t==='recipes')renderRecipes();
+  if(t==='tags')renderTags();
+}
+
+function render(){renderRecipes();renderPlanner();renderRestock();renderTags();}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* TAGS */
+function renderTags(){
+  const el=document.getElementById('tag-list');
+  if(!state.tags.length){el.innerHTML='<div class="empty">Aucun tag. Crees-en un pour classer tes ingredients.</div>';return;}
+  el.innerHTML=state.tags.map(t=>`
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:10px 1.25rem">
+      <span style="font-size:14px">${esc(t)}</span>
+      <button class="sm danger" onclick="deleteTag(${JSON.stringify(t)})">Suppr.</button>
+    </div>`).join('');
+  populateTagSelects();
+}
+function openAddTag(){document.getElementById('tag-form').style.display='block';document.getElementById('tag-input').focus();}
+function cancelTag(){document.getElementById('tag-form').style.display='none';document.getElementById('tag-input').value='';}
+function saveTag(){
+  const v=document.getElementById('tag-input').value.trim();
+  if(!v)return;
+  if(state.tags.includes(v)){alert('Ce tag existe deja');return;}
+  state.tags.push(v);
+  document.getElementById('tag-input').value='';
+  document.getElementById('tag-form').style.display='none';
+  save();renderTags();
+}
+function deleteTag(t){
+  if(!confirm('Supprimer ce tag ? Il sera retire de tous les ingredients.'))return;
+  state.tags=state.tags.filter(x=>x!==t);
+  state.recipes.forEach(r=>{if(r.ingredients)r.ingredients.forEach(i=>{if(i.tag===t)delete i.tag;});});
+  state.restock.forEach(i=>{if(i.tag===t)delete i.tag;});
+  save();render();
+}
+function populateTagSelects(){
+  const opts='<option value="">-- Aucun tag --</option>'+state.tags.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  document.querySelectorAll('.tag-select').forEach(s=>{const v=s.value;s.innerHTML=opts;s.value=v;});
+  const rs=document.getElementById('restock-tag-select');
+  if(rs)rs.innerHTML=opts;
+}
+
+/* RECETTES */
+function renderRecipes(){
+  const list=document.getElementById('recipe-list');
+  document.getElementById('recipe-count').textContent=state.recipes.length+' recette'+(state.recipes.length!==1?'s':'');
+  if(!state.recipes.length){list.innerHTML='<div class="empty">Aucune recette encore.</div>';return;}
+  list.innerHTML=state.recipes.map(r=>`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;font-size:15px">${esc(r.name)}</div>
+          ${r.url?`<a href="${esc(r.url)}" target="_blank" style="font-size:12px;color:var(--info);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${esc(r.url.length>50?r.url.substring(0,50)+'...':r.url)}</a>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="sm" onclick="editRecipe('${r.id}')">Editer</button>
+          <button class="sm danger" onclick="deleteRecipe('${r.id}')">Suppr.</button>
+        </div>
+      </div>
+      ${r.ingredients&&r.ingredients.length?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${r.ingredients.map(i=>`<span class="badge">${i.qty?i.qty+' ':''}${i.unit?i.unit+' ':''}${esc(i.name)}${i.tag?` <span class="tag-badge">${esc(i.tag)}</span>`:''}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+}
+function openAddRecipe(){
+  editingId=null;
+  document.getElementById('f-name').value='';
+  document.getElementById('f-url').value='';
+  ingRows=[];renderIngRows();addIngredientRow();
+  document.getElementById('recipe-form').style.display='block';
+  document.getElementById('recipe-form').scrollIntoView({behavior:'smooth'});
+}
+function editRecipe(id){
+  const r=state.recipes.find(x=>x.id===id);if(!r)return;
+  editingId=id;
+  document.getElementById('f-name').value=r.name;
+  document.getElementById('f-url').value=r.url||'';
+  ingRows=r.ingredients?JSON.parse(JSON.stringify(r.ingredients)):[];
+  renderIngRows();if(!ingRows.length)addIngredientRow();
+  document.getElementById('recipe-form').style.display='block';
+  document.getElementById('recipe-form').scrollIntoView({behavior:'smooth'});
+}
+function cancelRecipe(){document.getElementById('recipe-form').style.display='none';}
+function addIngredientRow(){
+  ingRows.push({_id:Date.now()+Math.random(),name:'',qty:'',unit:'',tag:''});renderIngRows();
+}
+function renderIngRows(){
+  const el=document.getElementById('ing-list');
+  const tagOpts='<option value="">Tag</option>'+state.tags.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  el.innerHTML=ingRows.map((r,i)=>`
+    <div class="ingredient-row">
+      <input class="qty" placeholder="Qte" value="${esc(r.qty)}" oninput="ingRows[${i}].qty=this.value">
+      <input class="unit" placeholder="Unite" value="${esc(r.unit)}" oninput="ingRows[${i}].unit=this.value">
+      <input placeholder="Ingredient" value="${esc(r.name)}" oninput="ingRows[${i}].name=this.value">
+      <select class="tag-select" onchange="ingRows[${i}].tag=this.value">${tagOpts.replace(`value="${esc(r.tag||'')}"`,`value="${esc(r.tag||'')}" selected`)}</select>
+      <button onclick="removeIngRow(${i})">x</button>
+    </div>`).join('');
+}
+function removeIngRow(i){ingRows.splice(i,1);renderIngRows();}
+function saveRecipe(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name)return alert('Donne un nom a la recette');
+  const recipe={
+    id:editingId||('r'+Date.now()),name,
+    url:document.getElementById('f-url').value.trim(),
+    ingredients:ingRows.filter(r=>r.name.trim()).map(r=>({name:r.name.trim(),qty:r.qty.trim(),unit:r.unit.trim(),tag:r.tag||''}))
+  };
+  if(editingId){const i=state.recipes.findIndex(x=>x.id===editingId);state.recipes[i]=recipe;}
+  else state.recipes.push(recipe);
+  editingId=null;
+  document.getElementById('recipe-form').style.display='none';
+  save();renderRecipes();
+}
+function deleteRecipe(id){
+  if(!confirm('Supprimer cette recette ?'))return;
+  state.recipes=state.recipes.filter(r=>r.id!==id);
+  Object.keys(state.planner).forEach(k=>{if(state.planner[k]===id)delete state.planner[k];});
+  save();renderRecipes();renderPlanner();
+}
+
+/* PLANNING */
+function renderPlanner(){
+  ['week1','week2'].forEach((wid,wi)=>{
+    const el=document.getElementById(wid);
+    el.innerHTML=DAYS.map((d,di)=>{
+      const key=`w${wi+1}-${di}`;
+      return `<div class="day-cell"><h4>${d}</h4>${MEALS.map(m=>{
+        const mkey=key+'-'+m;
+        const mid=state.planner[mkey];
+        const rec=mid?state.recipes.find(r=>r.id===mid):null;
+        return `<div class="meal-slot"><div class="meal-slot-label">${m}</div>
+          ${rec
+            ?`<div class="meal-tag"><span title="${esc(rec.name)}">${esc(rec.name)}</span><button class="rm" onclick="removeMeal('${mkey}')">x</button></div>`
+            :`<button class="add-meal-btn" onclick="openPicker('${mkey}')">+ ajouter</button>`
+          }</div>`;
+      }).join('')}</div>`;
+    }).join('');
+  });
+}
+function removeMeal(mkey){delete state.planner[mkey];save();renderPlanner();}
+function resetPlanner(){if(!confirm('Reinitialiser tout le planning ?'))return;state.planner={};save();renderPlanner();}
+function openPicker(mkey){
+  if(!state.recipes.length){alert('Ajoute dabord des recettes !');return;}
+  pickerMkey=mkey;
+  document.getElementById('picker-search').value='';
+  filterPicker('');
+  document.getElementById('picker-overlay').classList.add('open');
+}
+function closePicker(){pickerMkey=null;document.getElementById('picker-overlay').classList.remove('open');}
+function filterPicker(q){
+  const list=document.getElementById('picker-list');
+  const filtered=state.recipes.filter(r=>!q||r.name.toLowerCase().includes(q.toLowerCase()));
+  if(!filtered.length){list.innerHTML='<div class="picker-empty">Aucune recette trouvee</div>';return;}
+  list.innerHTML=filtered.map(r=>`<div class="picker-item" onclick="selectRecipe('${r.id}')">${esc(r.name)}</div>`).join('');
+}
+function selectRecipe(rid){
+  if(!pickerMkey)return;
+  state.planner[pickerMkey]=rid;
+  save();renderPlanner();closePicker();
+}
+
+/* COURSES */
+function refreshGrocery(){
+  const items={};
+  Object.keys(state.planner).forEach(k=>{
+    const rid=state.planner[k];
+    const rec=state.recipes.find(r=>r.id===rid);
+    if(!rec||!rec.ingredients)return;
+    rec.ingredients.forEach(ing=>{
+      const key='ing||'+(ing.unit||'')+'||'+ing.name;
+      const tag=ing.tag||NO_TAG;
+      if(!items[key])items[key]={name:ing.name,qty:parseFloat(ing.qty)||0,hasQty:!!ing.qty,unit:ing.unit||'',checked:state.grocery[key]?.checked||false,tag,source:'recettes'};
+      else if(items[key].hasQty&&ing.qty)items[key].qty+=(parseFloat(ing.qty)||0);
+    });
+  });
+  Object.keys(state.restockAdded).forEach(rid=>{
+    if(!state.restockAdded[rid])return;
+    const item=state.restock.find(r=>r.id===rid);
+    if(!item)return;
+    const key='restock||'+rid;
+    items[key]={name:item.name,qty:0,hasQty:false,unit:'',checked:state.grocery[key]?.checked||false,tag:item.tag||NO_TAG,source:'recharger'};
+  });
+  const el=document.getElementById('grocery-list');
+  const keys=Object.keys(items);
+  if(!keys.length){el.innerHTML='<div class="empty">Aucun repas planifie et aucun article ajoute.</div>';return;}
+  const tagOrder=[...state.tags,NO_TAG];
+  const byTag={};
+  keys.forEach(k=>{
+    const t=items[k].tag||NO_TAG;
+    if(!byTag[t])byTag[t]=[];
+    byTag[t].push(k);
+  });
+  let html='';
+  tagOrder.forEach(tag=>{
+    if(!byTag[tag]||!byTag[tag].length)return;
+    const sorted=byTag[tag].sort((a,b)=>items[a].name.localeCompare(items[b].name));
+    html+=`<div class="grocery-section-label">${esc(tag)}</div>`;
+    html+=sorted.map(k=>groceryItemHtml(k,items[k])).join('');
+  });
+  el.innerHTML=html;
+}
+function groceryItemHtml(k,it){
+  const display=(it.hasQty?it.qty+' ':'')+(it.unit?it.unit+' ':'')+it.name;
+  const eid='gi-'+k.replace(/[^a-z0-9]/gi,'_');
+  return `<div class="grocery-item ${it.checked?'checked':''}" id="${eid}">
+    <input type="checkbox" ${it.checked?'checked':''} onchange="toggleGrocery(${JSON.stringify(k)},this.checked,'${eid}')">
+    <span>${esc(display.trim())}</span>
+  </div>`;
+}
+function toggleGrocery(key,val,eid){
+  if(!state.grocery[key])state.grocery[key]={};
+  state.grocery[key].checked=val;save();
+  const el=document.getElementById(eid);
+  if(el){if(val)el.classList.add('checked');else el.classList.remove('checked');}
+}
+function resetGrocery(){
+  if(!confirm('Remettre toutes les cases a zero ?'))return;
+  state.grocery={};
+  Object.keys(state.restockAdded).forEach(k=>state.restockAdded[k]=false);
+  save();refreshGrocery();renderRestock();
+}
+
+/* A RECHARGER */
+function renderRestock(){
+  const el=document.getElementById('restock-list');
+  if(!state.restock.length){el.innerHTML='<div class="empty">Aucun article. Ajoutes-en !</div>';return;}
+  el.innerHTML=state.restock.map(item=>{
+    const added=!!state.restockAdded[item.id];
+    return `<div class="restock-row">
+      <span class="name">${esc(item.name)}${item.tag?` <span class="tag-badge">${esc(item.tag)}</span>`:''}</span>
+      ${added
+        ?`<button class="btn-remove-courses" onclick="toggleRestockAdd('${item.id}')">Retirer des courses</button>`
+        :`<button class="btn-add-courses" onclick="toggleRestockAdd('${item.id}')">+ Ajouter aux courses</button>`
+      }
+      <button class="sm danger" onclick="deleteRestock('${item.id}')">Suppr.</button>
+    </div>`;
+  }).join('');
+}
+function toggleRestockAdd(id){state.restockAdded[id]=!state.restockAdded[id];save();renderRestock();}
+function deleteRestock(id){
+  state.restock=state.restock.filter(r=>r.id!==id);
+  delete state.restockAdded[id];
+  save();renderRestock();
+}
+function openAddRestock(){
+  populateTagSelects();
+  document.getElementById('restock-form').style.display='block';
+  document.getElementById('restock-input').focus();
+}
+function cancelRestock(){document.getElementById('restock-form').style.display='none';document.getElementById('restock-input').value='';}
+function saveRestockItem(){
+  const v=document.getElementById('restock-input').value.trim();
+  if(!v)return;
+  const tag=document.getElementById('restock-tag-select').value;
+  state.restock.push({id:'rs'+Date.now(),name:v,tag});
+  document.getElementById('restock-input').value='';
+  document.getElementById('restock-tag-select').value='';
+  document.getElementById('restock-form').style.display='none';
+  save();renderRestock();
+}
+document.getElementById('restock-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveRestockItem();});
+
+load();
+</script>
+</body>
+</html>
